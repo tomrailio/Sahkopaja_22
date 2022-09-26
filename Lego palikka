@@ -1,0 +1,22 @@
+// Tää jäi kesken. 
+
+
+tb =1.2;
+d = 1.1;
+b = 
+
+difference();
+
+cube(16, 8, 0.6);
+
+translate(10,0,0);
+        cube(10,0,0);
+        
+    }
+
+for(a= (0:1))
+    
+        
+translate([4, 4.0, 4])
+cylinder (d=d, b=1, 
+
