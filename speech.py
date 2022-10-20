@@ -24,6 +24,8 @@ while True:
             print("Recognizing...")
             # convert speech to text
             text = r.recognize_google(audio_data)
+            print(text)
             print(visiiri(text))
     except:
         print('Error')
+    # time.sleep(1.5)
