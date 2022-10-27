@@ -1,0 +1,220 @@
+
+
+/*
+ * Copyright (C) 2011 J. Coliz <maniacbug@ymail.com>
+ * Modified for use on ELEC-A4010 Sähköpaja course.
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * version 2 as published by the Free Software Foundation.
+ */
+
+/**
+ * Esimerkki RF radio-ping-pari
+ *
+ * Tämä on esimerkki RF24 luokan käyttämisestä.  Lataa tämä ohjelma kahdelle eri noodille,
+ * kytke toisessa noodissa "roolipinni" maahan.  Ping-noodi lähettää kellonajan pong-noodille,
+ * joka vastaa lähettämällä arvon takaisin.  Ping-noodi laskee tästä kaukanko edestakainen kulkuaika
+ * oli (round-trip-time, RTT).
+ */
+
+#include <SPI.h>
+#include "nRF24L01.h"
+#include "RF24.h"
+#include "printf.h"
+
+//
+// Rauta-asetukset
+//
+
+// Kytke nRF24L01+ radio SPI väylään ja pinnit 9=CE ja 10=CSN.
+RF24 radio(9,10);
+
+// Roolipinni valitsee tämän yksikön roolin.  Kytke maahan valitaksesi pong-noodi
+// tai jätä avoimeksi valitaksesi ping-rooli.
+const int role_pin = 7;
+
+//
+// Osoitteet
+//
+
+// Radio-osoitteet kahden noodin viestintään.
+const uint64_t pipes[2] = { 0xF0F0F0F0E1LL, 0xF0F0F0F0D2LL };
+
+//
+// Roolinhallinta
+//
+// Asettaa roolin.  Sama ohjelma ladataan kummallekin noodille.
+// Tämä helpottaa ohjelmointia.  Kytkemällä roolipinni valitaan
+// noodien toiminta.
+//
+
+// Käytetyt roolit
+typedef enum { role_ping_out = 1, role_pong_back } role_e;
+
+// Ystävälliset nimet rooleille
+const char* role_friendly_name[] = { "invalid", "Ping out", "Pong back"};
+
+// Muuttuja joka säilöö noodin tämänhetkisen roolin
+role_e role;
+
+void setup(void)
+{
+  //
+  // Roolin päättely
+  //
+
+  // Alusta roolipinni
+  pinMode(role_pin, INPUT);
+  digitalWrite(role_pin,HIGH);  // Aseta ylös
+  delay(20); // Odota että tila vakiintuu
+
+  // Lue roolipinnin arvo päätelläksesi noodin rooli
+  if ( ! digitalRead(role_pin) )
+    role = role_ping_out;
+  else
+    role = role_pong_back;
+
+  //
+  // Tulosta esittely
+  //
+
+  Serial.begin(57600);
+  printf_begin();
+  printf("\n\rRF24/examples/pingpair/\n\r");
+  printf("ROLE: %s\n\r",role_friendly_name[role]);
+
+  //
+  // Alusta radio
+  //
+
+  radio.begin();
+
+  // Aseta viive yritysten välissä ja yritysten määrä (valinnaista)
+  radio.setRetries(15,15);
+
+  // Aseta viestien koko (valinnaista)
+  // Pienemmät viestit saattavat parantaa luotettavuutta.
+  radio.setPayloadSize(8);
+
+  //
+  // Alusta radiopiirin osoitteet/putket viestintää varten
+  //
+
+  // Tässä sovelluksessa käytetään kahta osoitetta kahden noodin väliseen
+  // edestakaiseen viestintään.
+  // Asetetaan siis "meidän" osoite kirjoittamista varten, ja vastaavasti
+  // "toinen" osoite kuuntelua varten.  (kuunteluosoitteita voi olla yht. max 6)
+
+  if ( role == role_ping_out )
+  {
+    radio.openWritingPipe(pipes[0]);
+    radio.openReadingPipe(1,pipes[1]);
+  }
+  else
+  {
+    radio.openWritingPipe(pipes[1]);
+    radio.openReadingPipe(1,pipes[0]);
+  }
+
+  //
+  // Aloita kuuntelu.
+  //
+
+  radio.startListening();
+
+  //
+  // Tulosta radiopiirin asetukset.
+  // Tästä näkee helposti jos yhteydessä radiopiiriin on ongelmia.
+  //
+
+  radio.printDetails();
+}
+
+void loop(void)
+{
+  //
+  // Jos rooli on "ping", lähetä jatkuvast kelloaikaa.
+  //
+
+  if (role == role_ping_out)
+  {
+    // Lopeta kuuntelu jotta voidaan lähettää
+    radio.stopListening();
+
+    // Lue aika ja lähetä se.  Lähetys odottaa kunnes onnistuu.
+    unsigned long time = millis();
+    printf("Now sending %lu...",time);
+    bool ok = radio.write( &time, sizeof(unsigned long) );
+    
+    if (ok)
+      printf("ok...");  // Vastapää kuittasi
+    else
+      printf("failed.\n\r");  // Lähetysyritys epäonnistui
+
+    // Vaihda takaisin kuuntelemiseen
+    radio.startListening();
+
+    // Odota kunnes vastaus saapuu, tai luovutaan odottelusta 250ms kuluttua.
+    unsigned long started_waiting_at = millis();
+    bool timeout = false;
+    while ( ! radio.available() && ! timeout )
+      if (millis() - started_waiting_at > 250 )
+        timeout = true;  // Ei saatu vastausta.
+
+    // Tulosta vastaus
+    if ( timeout )
+    {
+      printf("Failed, response timed out.\n\r");
+    }
+    else
+    {
+      // Lue kellonaika vastauksesta.
+      unsigned long got_time;
+      radio.read( &got_time, sizeof(unsigned long) );
+
+      // Tulosta vastaanotettu aika ja erotus
+      printf("Got response %lu, round-trip delay: %lu\n\r",got_time,millis()-got_time);
+    }
+
+    // Yritä uudestaan sekunnin kuluttua
+    delay(1000);
+  }
+
+  //
+  // Jos rooli on "pong", vastaanotetaan paketteja, tulostetaan ne ja lähetetään takaisin.
+  //
+
+  if ( role == role_pong_back )
+  {
+    // Onko radiolla vastaanotettua dataa?
+    if ( radio.available() )
+    {
+      // Tulosta viestejä kunnes ollaan luettu kaikki.
+      unsigned long got_time;
+      bool done = false;
+      while (!done)
+      {
+        // Lue viesti ja tarkasta oliko tämä viimeinen.
+        done = radio.read( &got_time, sizeof(unsigned long) );
+
+        // Tulosta viestin sisältö
+        printf("Got payload %lu...",got_time);
+
+        // Odota hetki jotta lähettäjä kerkeää vaihtaa
+        // vastaanoton päälle.
+	delay(20);
+      }
+
+      // Lakkaa kuuntelu jotta voidaan lähettää.
+      radio.stopListening();
+
+      // Lähetä viimeksi vastaanotettu viesti takaisin.
+      radio.write( &got_time, sizeof(unsigned long) );
+      printf("Sent response.\n\r");
+
+      // Jatka viestien kuuntelua.
+      radio.startListening();
+    }
+  }
+}
