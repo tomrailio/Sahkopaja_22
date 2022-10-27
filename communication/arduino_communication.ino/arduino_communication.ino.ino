@@ -34,9 +34,9 @@ void loop() {
   if(Serial.available() > 0){
     String data = Serial.readStringUntil('\n');
     Serial.print("You sent me: ");
-    if(data == "on"){
+    if(data == "OPEN"){
       digitalWrite(LED_BUILTIN, HIGH);
-    } else if(data == "off"){
+    } else if(data == "CLOSE"){
       digitalWrite(LED_BUILTIN, LOW);
     }
   }
