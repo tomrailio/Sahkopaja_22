@@ -16,18 +16,18 @@ void loop()
 	Serial.print(y, DEC); // print acceleration in the Y axis
 	Serial.print(" "); // prints a space between the numbers
 	Serial.println(z, DEC); // print acceleration in the Z axis
-	delay(100); // wait 100ms for next reading  
+	delay(100); // wait 100ms for next reading             mittaa kiihtyvyyttä 100ms välein
   
   
   if (z || y > 600) {
-    delay(2000);
+    delay(2000);     // kaatumisen jälkeen odottaa 2s
     z2 = analogRead(2); 
-    y2 = analogRead(1);
+    y2 = analogRead(1);  // mittaa kiihtyvydeen uudestaan
     delay(1000);
     z3 = analogRead(2);
-    y3 = analogRead(1);
-    if (z3 == z2 || y2 == y3) {
-      SOS       // kertoo raspille: soita avunhuuto
+    y3 = analogRead(1);  // mittaa kiihtyvyyden taas
+    if (z3 == z2 || y2 == y3) { 
+      SOS       // jos kypärä jäänyt paikoilleen niin kertoo raspille: soita avunhuuto
     }
   }
   
