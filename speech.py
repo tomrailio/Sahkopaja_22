@@ -24,8 +24,40 @@ def visiiri(text):
 
 ser = serial.Serial('/dev/ttyACM0', 9600, timeout=6)
 ser.reset_input_buffer()
-r = sr.Recognizer()
+#r = sr.Recognizer()
 
+def callback(recognizer, audio):
+    print("CALLBACK!")
+    try:
+        #text = recognizer.recognize_google(audio)
+        text = recognizer.recognize_sphinx(audio)
+
+        translate = visiiri(text)
+        if translate.decode() == 'QUIT':
+            print("QUITTING")
+            # break
+        print(translate)
+        if (translate.decode() != "UNKNOWN"):
+            print("SENDING!")
+            ser.write(translate)
+
+    except:
+        print("Error")
+
+
+r = sr.Recognizer()
+m = sr.Microphone()
+
+stop_listening = r.listen_in_background(m, callback)
+
+exit = False
+
+while not exit:
+    print("LOOP")
+    time.sleep(2)
+
+
+"""
 while True:
     try:
         with sr.Microphone() as source:
@@ -46,3 +78,4 @@ while True:
     except:
         print('Error')
     # time.sleep(1.5)
+"""
