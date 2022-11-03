@@ -5,7 +5,7 @@ void setup()
 	Serial.begin(9600); // sets the serial port to 9600
 }
 
-void loop()
+void kiihtyvyysanturi()
 {
 	x = analogRead(0); // read analog input pin 0
 	y = analogRead(1); // read analog input pin 1
@@ -27,7 +27,7 @@ void loop()
     z3 = analogRead(2);
     y3 = analogRead(1);  // mittaa kiihtyvyyden taas
     if (z3 == z2 || y2 == y3) { 
-      SOS       // jos kypärä jäänyt paikoilleen niin kertoo raspille: soita avunhuuto
+      Serial.print("SOS") ; //jos kypärä jäänyt paikoilleen niin kertoo raspille: soita avunhuuto
     }
   }
   
