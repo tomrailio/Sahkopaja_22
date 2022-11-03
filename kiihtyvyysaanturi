@@ -21,7 +21,7 @@ void loop()
     Serial.print(y, DEC); // print acceleration in the Y axis
     Serial.print(" "); // prints a space between the numbers
     Serial.println(z, DEC); // print acceleration in the Z axis
-                                                             // delay(100); // wait 100ms for next reading             mittaa kiihtyvyyttä 100ms välein
+                                                            
   
   
     if (z > 600 || y > 600) {
