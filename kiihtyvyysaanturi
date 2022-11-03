@@ -11,8 +11,8 @@ void setup()
 void loop()
 {
   unsigned long currentTime = millis();
-  
-  if (currentTime - previousTime >= eventInterval) {
+  unsigned long mittaus = 1; 
+  if (currentTime - previousTime >= eventInterval && mittaus == 1)  {
     x = analogRead(0); // read analog input pin 0
     y = analogRead(1); // read analog input pin 1
     z = analogRead(2); // read analog input pin 1
@@ -22,25 +22,28 @@ void loop()
     Serial.print(y, DEC); // print acceleration in the Y axis
     Serial.print(" "); // prints a space between the numbers
     Serial.println(z, DEC); // print acceleration in the Z axis
-                                                            
+    previousTime = currentTime;                                
   
   
     if (z > 600 || y > 600) {
-        unsigned long iskuaika = millis();
-        
+        unsigned long iskuaika = currentTime;
+        mittaus = 0;
         Serial.print("isku havaittu");
+        unsigned long valiaika = currentTime;
         
-        if (iskuaika + 3000 > millis()) {
+        if (currentTime - valiaika >= 3000) {
           int z2 = analogRead(2); 
           int y2 = analogRead(1);  // mittaa kiihtyvydeen uudestaan
           Serial.println("1. mittaus iskun jlk");
-          if (iskuaika + 4000 > millis()) {
+          
+          if (currentTime - valiaika >= 5000) {
             int z3 = analogRead(2);
             int y3 = analogRead(1);  // mittaa kiihtyvyyden taas
             Serial.println("2. mittaus iskun jlk");
             if (z3 == z2 || y2 == y3) { 
               Serial.print("SOS");       // jos kypärä jäänyt paikoilleen niin kertoo raspille: soita avunhuuto
     
-    previousTime = currentTime;
+        previousTime = currentTime;
     }}}}}}
+ 
  
