@@ -15,6 +15,10 @@ def visiiri(text):
             return b"CLOSE"
         elif word in ["quit", "exit"]:
             return b"QUIT"
+        elif word in ["left"]:
+            return b"LEFT"
+        elif word in ["right"]:
+            return b"RIGHT"
         else:
             return b"UNKNOWN"
 
@@ -35,7 +39,9 @@ while True:
                 print("QUITTING")
                 break
             print(translate)
-            ser.write(translate)
+            if(translate.decode() != "UNKNOWN"):
+                print("SENDING!")
+                ser.write(translate)
             # time.sleep(1)
     except:
         print('Error')

@@ -27,7 +27,11 @@
 #define DATA_PIN 3
 #define LED_TYPE WS2811
 #define COLOR_ORDER GRB
-#define BRIGHTNESS 255
+#define BRIGHTNESS 100
+
+String state = "";
+unsigned long previousTime = millis();
+const int blinkInterval = 500;
 CRGB leds[NUM_LEDS];
 
 // the setup function runs once when you press reset or power the board
@@ -42,6 +46,11 @@ void setup() {
   }
   FastLED.show();
   Serial.begin(9600);
+  pinMode(LED_BUILTIN, OUTPUT);
+}
+
+bool rightIsOn() {
+  return leds[4] == CRGB(0, 255, 0);
 }
 
 // the loop function runs over and over again forever
@@ -55,7 +64,36 @@ void loop() {
     } else if(data == "CLOSE"){
       //digitalWrite(LED_BUILTIN, LOW);
       leds[0] = CRGB(0,0,0);
+    } else if(data == "RIGHT"){
+      state = "RIGHT";
+      for (int i = 4; i < NUM_LEDS; i++){
+        leds[i] = CRGB(0, 255, 0);
+      }
+      //previousTime = millis();
     }
-    FastLED.show();
   }
+
+
+  if (state == "RIGHT"){
+    if(millis() - previousTime >= blinkInterval){
+      //Serial.println("BLINKING");
+      CRGB color;
+      previousTime = millis();
+      if(rightIsOn()){
+        color = CRGB(0,0,0);
+      } else {
+        color = CRGB(0, 255, 0);
+      }
+      for(int i = 4; i < NUM_LEDS; i++){
+        leds[i] = color;
+      }
+      
+    }
+  }
+    
+    FastLED.show();
+    //delay(100);
+    digitalWrite(LED_BUILTIN, LOW);
+    // delay(500);
+  
 }
