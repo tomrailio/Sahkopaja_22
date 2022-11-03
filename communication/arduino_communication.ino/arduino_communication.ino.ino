@@ -21,11 +21,26 @@
 
   https://www.arduino.cc/en/Tutorial/BuiltInExamples/Blink
 */
+#include <FastLED.h>
+
+#define NUM_LEDS 8
+#define DATA_PIN 3
+#define LED_TYPE WS2811
+#define COLOR_ORDER GRB
+#define BRIGHTNESS 255
+CRGB leds[NUM_LEDS];
 
 // the setup function runs once when you press reset or power the board
 void setup() {
   // initialize digital pin LED_BUILTIN as an output.
   pinMode(LED_BUILTIN, OUTPUT);
+  //FastLED.addLeds<LED_TYPE, DATA_PIN, COLOR_ORDER>(leds, NUM_LEDS).setCorrection(TypicalLEDStrip);
+  //FastLED.setBrightness( BRIGHTNESS);
+  FastLED.addLeds<TM1829, DATA_PIN, RGB>(leds, NUM_LEDS);
+  for(int i = 0; i < NUM_LEDS; i++) {
+    leds[i] = CRGB(0, 0, 0);
+  }
+  FastLED.show();
   Serial.begin(9600);
 }
 
@@ -35,9 +50,12 @@ void loop() {
     String data = Serial.readStringUntil('\n');
     Serial.print("You sent me: ");
     if(data == "OPEN"){
-      digitalWrite(LED_BUILTIN, HIGH);
+      //digitalWrite(LED_BUILTIN, HIGH);
+      leds[0] = CRGB(255,0,0);
     } else if(data == "CLOSE"){
-      digitalWrite(LED_BUILTIN, LOW);
+      //digitalWrite(LED_BUILTIN, LOW);
+      leds[0] = CRGB(0,0,0);
     }
+    FastLED.show();
   }
 }

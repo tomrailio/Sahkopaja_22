@@ -13,6 +13,8 @@ def visiiri(text):
             return b"OPEN"
         elif word in ["close", "down"]:
             return b"CLOSE"
+        elif word in ["quit", "exit"]:
+            return b"QUIT"
         else:
             return b"UNKNOWN"
 
@@ -28,9 +30,12 @@ while True:
             print("Recognizing...")
             # convert speech to text
             text = r.recognize_google(audio_data)
-            print(text)
-            print(visiiri(text))
-            ser.write(visiiri(text))
+            translate = visiiri(text)
+            if translate.decode() == 'QUIT':
+                print("QUITTING")
+                break
+            print(translate)
+            ser.write(translate)
             # time.sleep(1)
     except:
         print('Error')
