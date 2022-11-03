@@ -2,37 +2,32 @@ int x, y, z;
 
 void setup()
 {
-	Serial.begin(9600); // sets the serial port to 9600
+  Serial.begin(9600); // sets the serial port to 9600
 }
 
-void kiihtyvyysanturi()
+void loop()
 {
-	x = analogRead(0); // read analog input pin 0
-	y = analogRead(1); // read analog input pin 1
-	z = analogRead(2); // read analog input pin 1
-	Serial.print("accelerations are x, y, z: ");
-	Serial.print(x, DEC); // print acceleration in the X axis
-	Serial.print(" "); // prints a space between the numbers
-	Serial.print(y, DEC); // print acceleration in the Y axis
-	Serial.print(" "); // prints a space between the numbers
-	Serial.println(z, DEC); // print acceleration in the Z axis
-	delay(100); // wait 100ms for next reading             mittaa kiihtyvyyttä 100ms välein
+  x = analogRead(0); // read analog input pin 0
+  y = analogRead(1); // read analog input pin 1
+  z = analogRead(2); // read analog input pin 1
+  Serial.print("accelerations are x, y, z: ");
+  Serial.print(x, DEC); // print acceleration in the X axis
+  Serial.print(" "); // prints a space between the numbers
+  Serial.print(y, DEC); // print acceleration in the Y axis
+  Serial.print(" "); // prints a space between the numbers
+  Serial.println(z, DEC); // print acceleration in the Z axis
+  delay(100); // wait 100ms for next reading             mittaa kiihtyvyyttä 100ms välein
   
   
-  if (z || y > 600) {
-    delay(2000);     // kaatumisen jälkeen odottaa 2s
-    z2 = analogRead(2); 
-    y2 = analogRead(1);  // mittaa kiihtyvydeen uudestaan
+  if (z > 600 || y > 600) {
+    Serial.print(isku havaittu);
+    delay(3000);     // kaatumisen jälkeen odottaa 3s
+    int z2 = analogRead(2); 
+    int y2 = analogRead(1);  // mittaa kiihtyvydeen uudestaan
     delay(1000);
-    z3 = analogRead(2);
-    y3 = analogRead(1);  // mittaa kiihtyvyyden taas
+    int z3 = analogRead(2);
+    int y3 = analogRead(1);  // mittaa kiihtyvyyden taas
     if (z3 == z2 || y2 == y3) { 
-      Serial.print("SOS") ; //jos kypärä jäänyt paikoilleen niin kertoo raspille: soita avunhuuto
-    }
-  }
-  
-
-}
-
-
-
+      Serial.print("SOS");       // jos kypärä jäänyt paikoilleen niin kertoo raspille: soita avunhuuto
+    }}
+ 
