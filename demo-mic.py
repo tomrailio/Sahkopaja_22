@@ -10,12 +10,11 @@ import time
 import speech_recognition as sr
 import serial
 
-ser = serial.Serial('/dev/ttyACM0', 9600, timeout=6)
+ser = serial.Serial('/dev/ttyACM0', 9600, timeout=2)
 ser.reset_input_buffer()
 exit = False
 
 WORD_LIST = []
-KEYWORDS = [("left", 0.05), ("right", 0.05), ("stop", 0.01), ("dummy", 1.00)]
 
 
 def visiiri(text):
@@ -51,8 +50,9 @@ def callback(recognizer, audio):
             print("SENDING!")
             ser.write(translate)
 
-    except:
+    except Exception as e:
         print("Error")
+        print(e)
 
 ## python script to listen in background
 if __name__ == "__main__":
