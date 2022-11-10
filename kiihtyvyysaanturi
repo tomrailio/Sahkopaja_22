@@ -1,9 +1,12 @@
-int x, y, z;
+int x, y, z, z2, y2, z3, y3 ; 
 const unsigned long eventInterval = 100;
 unsigned long previousTime = 0;
-
-
+unsigned long valiaika = 0;
+bool mittaus = true;
+bool mittaus2 = true;
+bool mittaus3 = true;
 void setup()
+
 {
   Serial.begin(9600); // sets the serial port to 9600
 }
@@ -11,8 +14,8 @@ void setup()
 void loop()
 {
   unsigned long currentTime = millis();
-  unsigned long mittaus = 1; 
-  if (currentTime - previousTime >= eventInterval && mittaus == 1)  {
+   
+  if (currentTime - previousTime >= eventInterval && mittaus)  {
     x = analogRead(0); // read analog input pin 0
     y = analogRead(1); // read analog input pin 1
     z = analogRead(2); // read analog input pin 1
@@ -22,28 +25,38 @@ void loop()
     Serial.print(y, DEC); // print acceleration in the Y axis
     Serial.print(" "); // prints a space between the numbers
     Serial.println(z, DEC); // print acceleration in the Z axis
-    previousTime = currentTime;                                
+    previousTime = currentTime;     
+                            
+  }
   
-  
-    if (z > 600 || y > 600) {
-        unsigned long iskuaika = currentTime;
-        mittaus = 0;
-        Serial.print("isku havaittu");
-        unsigned long valiaika = currentTime;
+  if ((z > 600 || y > 600) && mittaus)  {
+     unsigned long iskuaika = currentTime;
+     mittaus = false;
+     valiaika = currentTime;
+     Serial.print("isku havaittu");
+     mittaus3 = true;
+   }     
         
-        if (currentTime - valiaika >= 3000) {
-          int z2 = analogRead(2); 
-          int y2 = analogRead(1);  // mittaa kiihtyvydeen uudestaan
-          Serial.println("1. mittaus iskun jlk");
+  if ((currentTime - valiaika >= 3000) && !mittaus && mittaus2  ) {
+     z2 = analogRead(2); 
+     y2 = analogRead(1);  // mittaa kiihtyvydeen uudestaan
+     Serial.println("1. mittaus iskun jlk");
+     mittaus2 = false;
+     
+  }        
+  if ((currentTime - valiaika >= 5000) && !mittaus && !mittaus2) {
+     z3 = analogRead(2);
+     y3 = analogRead(1);  // mittaa kiihtyvyyden taas
+     Serial.println("2. mittaus iskun jlk");
+     mittaus = true;
+     mittaus2 = true;
+     x = analogRead(0); // read analog input pin 0
+     y = analogRead(1); // read analog input pin 1
+     z = analogRead(2); // read analog input pin 1
+         if ((z3 == z2 || y2 == y3) && mittaus3) { 
+           Serial.print("SOS");       // jos kypärä jäänyt paikoilleen niin kertoo raspille: soita avunhuuto
+           mittaus3 = false;
           
-          if (currentTime - valiaika >= 5000) {
-            int z3 = analogRead(2);
-            int y3 = analogRead(1);  // mittaa kiihtyvyyden taas
-            Serial.println("2. mittaus iskun jlk");
-            if (z3 == z2 || y2 == y3) { 
-              Serial.print("SOS");       // jos kypärä jäänyt paikoilleen niin kertoo raspille: soita avunhuuto
-    
-        previousTime = currentTime;
-    }}}}}}
- 
- 
+     previousTime = currentTime;
+    }}
+}
