@@ -32,6 +32,8 @@
 String state = "";
 unsigned long previousTime = millis();
 const int blinkInterval = 500;
+unsigned long blinkStart = millis();
+const int blinkTime = 5000;
 CRGB leds[NUM_LEDS];
 
 // the setup function runs once when you press reset or power the board
@@ -53,6 +55,21 @@ bool rightIsOn() {
   return leds[4] == CRGB(0, 255, 0);
 }
 
+bool leftIsOn() {
+  return leds[0] == CRGB(0, 255, 0);
+}
+void turnOffLights(){
+  for(int i = 0; i < NUM_LEDS; i++){
+    leds[i] = CRGB(0,0,0);
+  }
+}
+
+void prepareLights(String s) {
+  state = s;
+  turnOffLights();
+  blinkStart = millis();
+}
+
 // the loop function runs over and over again forever
 void loop() {
   if(Serial.available() > 0){
@@ -65,35 +82,59 @@ void loop() {
       //digitalWrite(LED_BUILTIN, LOW);
       leds[0] = CRGB(0,0,0);
     } else if(data == "RIGHT"){
-      state = "RIGHT";
+      prepareLights("RIGHT");
       for (int i = 4; i < NUM_LEDS; i++){
         leds[i] = CRGB(0, 255, 0);
       }
       //previousTime = millis();
+    } else if(data == "LEFT"){
+      prepareLights("LEFT");
+      for(int i = 0; i < NUM_LEDS / 2; i++) {
+        leds[i] = CRGB(0, 255, 0);
+      }
     }
   }
 
 
-  if (state == "RIGHT"){
-    if(millis() - previousTime >= blinkInterval){
-      //Serial.println("BLINKING");
-      CRGB color;
-      previousTime = millis();
-      if(rightIsOn()){
-        color = CRGB(0,0,0);
-      } else {
-        color = CRGB(0, 255, 0);
+  if(millis() - blinkStart < blinkTime){
+    if (state == "RIGHT"){
+      if(millis() - previousTime >= blinkInterval){
+        //Serial.println("BLINKING");
+        CRGB color;
+        previousTime = millis();
+        if(rightIsOn()){
+          color = CRGB(0,0,0);
+        } else {
+          color = CRGB(0, 255, 0);
+        }
+        for(int i = NUM_LEDS / 2; i < NUM_LEDS; i++){
+          leds[i] = color;
+        }
+        
       }
-      for(int i = 4; i < NUM_LEDS; i++){
-        leds[i] = color;
-      }
-      
     }
+  
+    if(state == "LEFT"){
+      if(millis() - previousTime >= blinkInterval){
+        CRGB color;
+        previousTime = millis();
+        if(leftIsOn()) {
+          color = CRGB(0,0,0);
+        } else {
+          color = CRGB(0, 255, 0);
+        }
+        for(int i = 0; i < NUM_LEDS / 2; i++){
+          leds[i] = color;
+        }
+      }
+    }
+  } else {
+    turnOffLights();
+    state = "";
   }
-    
     FastLED.show();
     //delay(100);
-    digitalWrite(LED_BUILTIN, LOW);
+    //digitalWrite(LED_BUILTIN, LOW);
     // delay(500);
   
 }

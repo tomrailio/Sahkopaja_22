@@ -1,0 +1,2 @@
+sudo apt install portaudio19-dev flac
+pip3 install PyAudio SpeechRecognition serial pyserial
