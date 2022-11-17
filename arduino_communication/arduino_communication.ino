@@ -25,7 +25,7 @@
 #include <Servo.h>
 
 // LED configs
-#define NUM_LEDS 8
+#define NUM_LEDS 6
 #define DATA_PIN 3
 #define LED_TYPE WS2811
 #define COLOR_ORDER GRB
