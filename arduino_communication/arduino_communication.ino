@@ -22,7 +22,9 @@
   https://www.arduino.cc/en/Tutorial/BuiltInExamples/Blink
 */
 #include <FastLED.h>
+#include <Servo.h>
 
+// LED configs
 #define NUM_LEDS 8
 #define DATA_PIN 3
 #define LED_TYPE WS2811
@@ -36,8 +38,16 @@ unsigned long blinkStart = millis();
 const int blinkTime = 5000;
 CRGB leds[NUM_LEDS];
 
+// Servo configs
+int servo_position = 0;
+int serv_down = 0;
+int serv_up = 25;
+Servo theservo;
+
 // the setup function runs once when you press reset or power the board
 void setup() {
+  // LED setup
+  
   // initialize digital pin LED_BUILTIN as an output.
   pinMode(LED_BUILTIN, OUTPUT);
   //FastLED.addLeds<LED_TYPE, DATA_PIN, COLOR_ORDER>(leds, NUM_LEDS).setCorrection(TypicalLEDStrip);
@@ -49,6 +59,9 @@ void setup() {
   FastLED.show();
   Serial.begin(9600);
   pinMode(LED_BUILTIN, OUTPUT);
+
+  // SERVO setup
+  theservo.attach(9);
 }
 
 bool rightIsOn() {
@@ -75,12 +88,16 @@ void loop() {
   if(Serial.available() > 0){
     String data = Serial.readStringUntil('\n');
     Serial.print("You sent me: ");
-    if(data == "OPEN"){
+    if(data == "OPEN"){  // OPEN THE VISOR
       //digitalWrite(LED_BUILTIN, HIGH);
-      leds[0] = CRGB(255,0,0);
-    } else if(data == "CLOSE"){
+      //leds[0] = CRGB(255,0,0);
+
+      theservo.write(serv_up);
+    } else if(data == "CLOSE"){  // CLOSE THE VISOR
       //digitalWrite(LED_BUILTIN, LOW);
-      leds[0] = CRGB(0,0,0);
+      //leds[0] = CRGB(0,0,0);
+
+      theservo.write(serv_down);
     } else if(data == "RIGHT"){
       prepareLights("RIGHT");
       for (int i = 4; i < NUM_LEDS; i++){
