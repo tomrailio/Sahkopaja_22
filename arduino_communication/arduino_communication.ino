@@ -41,7 +41,7 @@ CRGB leds[NUM_LEDS];
 // Servo configs
 int servo_position = 0;
 int serv_down = 0;
-int serv_up = 25;
+int serv_up = 160;
 Servo theservo;
 
 // the setup function runs once when you press reset or power the board
@@ -62,6 +62,7 @@ void setup() {
 
   // SERVO setup
   theservo.attach(9);
+  theservo.write(servo_position);
 }
 
 bool rightIsOn() {
@@ -82,6 +83,7 @@ void prepareLights(String s) {
   turnOffLights();
   blinkStart = millis();
 }
+int k = 0;
 
 // the loop function runs over and over again forever
 void loop() {
@@ -92,12 +94,18 @@ void loop() {
       //digitalWrite(LED_BUILTIN, HIGH);
       //leds[0] = CRGB(255,0,0);
 
-      theservo.write(serv_up);
+      for (k = servo_position; k < serv_up; k++) {
+        theservo.write(k);
+      }
+      servo_position = k;
     } else if(data == "CLOSE"){  // CLOSE THE VISOR
       //digitalWrite(LED_BUILTIN, LOW);
       //leds[0] = CRGB(0,0,0);
 
-      theservo.write(serv_down);
+      for (k = servo_position; k > serv_down; k--) {
+        theservo.write(k);
+      }
+      servo_position = k;
     } else if(data == "RIGHT"){
       prepareLights("RIGHT");
       for (int i = 4; i < NUM_LEDS; i++){
