@@ -41,7 +41,7 @@ CRGB leds[NUM_LEDS];
 // Servo configs
 int servo_position = 0;
 int serv_down = 0;
-int serv_up = 160;
+int serv_up = 120;
 Servo theservo;
 
 // the setup function runs once when you press reset or power the board
@@ -94,7 +94,7 @@ void loop() {
       //digitalWrite(LED_BUILTIN, HIGH);
       //leds[0] = CRGB(255,0,0);
 
-      for (k = servo_position; k < serv_up; k++) {
+      for (k = servo_position; k > serv_down; k--) {
         theservo.write(k);
       }
       servo_position = k;
@@ -102,7 +102,7 @@ void loop() {
       //digitalWrite(LED_BUILTIN, LOW);
       //leds[0] = CRGB(0,0,0);
 
-      for (k = servo_position; k > serv_down; k--) {
+      for (k = servo_position; k < serv_up; k++) {
         theservo.write(k);
       }
       servo_position = k;
