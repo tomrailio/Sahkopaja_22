@@ -44,6 +44,24 @@ int serv_down = 0;
 int serv_up = 120;
 Servo theservo;
 
+// OLED Screen configs
+#include <SPI.h>
+#include <Wire.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
+
+#define SCREEN_WIDTH 128 // OLED display width, in pixels
+#define SCREEN_HEIGHT 32 // OLED display height, in pixels
+
+// Declaration for an SSD1306 display connected to I2C (SDA, SCL pins)
+// The pins for I2C are defined by the Wire-library. 
+// On an arduino UNO:       A4(SDA), A5(SCL)
+// On an arduino MEGA 2560: 20(SDA), 21(SCL)
+// On an arduino LEONARDO:   2(SDA),  3(SCL), ...
+#define OLED_RESET     -1 // Reset pin # (or -1 if sharing Arduino reset pin)
+#define SCREEN_ADDRESS 0x3C ///< See datasheet for Address; 0x3D for 128x64, 0x3C for 128x32
+Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
+
 // the setup function runs once when you press reset or power the board
 void setup() {
   // LED setup
@@ -63,7 +81,17 @@ void setup() {
   // SERVO setup
   theservo.attach(9);
   theservo.write(servo_position);
+
+  // LCD setup
+  // SHOULD START WITH POWER OFF?
+  // PROBLEM: MAKE CHANGES TO CIRCUIT SO A COMMAND CAN POWER ON THE LCD DISPLAY
+  // FOR NOW: ASSUME DISPLAY IS ALWAYS ON
+  display.resetOLED();  // consider a startup image
+
 }
+
+
+// LED LIGHT ROUTINES
 
 bool rightIsOn() {
   return leds[4] == CRGB(0, 255, 0);
@@ -83,6 +111,46 @@ void prepareLights(String s) {
   turnOffLights();
   blinkStart = millis();
 }
+
+// LCD SCREEN ROUTINES
+
+void resetOLED() {
+  display.clearDisplay();
+
+  display.setTextSize(2);
+  display.setTextColor(SSD1306_WHITE);
+  display.setCursor(36, 12);
+  display.dim(true);
+  
+}
+
+void writeOLED(String s) {
+  // should display only, or display and clear screen?
+  // the returning string s har form "CMD DATA"
+  // screen should display DATA only 
+  // t = duration?
+  int t = 1000;
+
+  int spcidx = s.indexOf(' ');
+  int slen = s.length();
+  String cmd = s.substring(0, spcidx);
+  String data = s.substring(spcidx+1,slen);
+
+  if (cmd == "WEATHER") {
+    data = data + 'C';  // assumes centigrade temperature
+  }
+  if (cmd == "TIME") {  // time can get printed as raw data
+    // heuristic center
+    // display.setCursor(36, 12);  // set in reset function; either data format is shown centered
+  }
+  
+  display.println(data);
+  display.display();
+  
+  delay(t);
+
+}
+
 int k = 0;
 
 // the loop function runs over and over again forever
@@ -118,11 +186,13 @@ void loop() {
       for(int i = 0; i < NUM_LEDS / 2; i++) {
         leds[i] = CRGB(0, 255, 0);
       }
-    }
+    } else if (command == "WEATHER" || command == "TIME") {
+      display.resetOLED();
+      display.writeOLED(data);  // NOTE: input is DATA, and not COMMAND
   }
 
 
-  if(millis() - blinkStart < blinkTime){
+  if(millis() - blinkStart < blinkTime){  // WARNING: may cause LCD screen bugs?
     if (state == "RIGHT"){
       if(millis() - previousTime >= blinkInterval){
         //Serial.println("BLINKING");
