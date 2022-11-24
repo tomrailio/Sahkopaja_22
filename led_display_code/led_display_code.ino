@@ -185,7 +185,7 @@ void setup() {
   display.drawBitmap(32,0,fett2a,64,32,1);  // not a good picture but works
   display.display();
   
-  delay(36000);
+  delay(3000);
   
   String txt = "TIME 12:06";
 

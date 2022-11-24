@@ -41,6 +41,12 @@ def visiiri(text):
             print(temp)
             s = "WEATHER " + str(temp)
             return bytes(s, "utf-8")
+        elif word in ["time", "thyme", "clock", "claw"]:
+            t = time.localtime(time.time())
+            t_str = str(t.tm_hour).zfill(2) + ":" + str(t.tm_min).zfill(2)
+            print(t_str)
+            s = "TIME " + t_str
+            return bytes(s, "utf-8")
         else:
             return b"UNKNOWN"
 
@@ -68,6 +74,10 @@ def callback(recognizer, audio):
 
 ## python script to listen in background
 if __name__ == "__main__":
+    
+    # visiiri("time")
+        
+    
     r = sr.Recognizer()
     m = sr.Microphone()
     
