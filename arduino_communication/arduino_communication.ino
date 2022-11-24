@@ -89,8 +89,9 @@ int k = 0;
 void loop() {
   if(Serial.available() > 0){
     String data = Serial.readStringUntil('\n');
+    String command = data.substring(0, data.indexOf(" "));
     Serial.print("You sent me: ");
-    if(data == "OPEN"){  // OPEN THE VISOR
+    if(command == "OPEN"){  // OPEN THE VISOR
       //digitalWrite(LED_BUILTIN, HIGH);
       //leds[0] = CRGB(255,0,0);
 
@@ -98,7 +99,7 @@ void loop() {
         theservo.write(k);
       }
       servo_position = k;
-    } else if(data == "CLOSE"){  // CLOSE THE VISOR
+    } else if(command == "CLOSE"){  // CLOSE THE VISOR
       //digitalWrite(LED_BUILTIN, LOW);
       //leds[0] = CRGB(0,0,0);
 
@@ -106,13 +107,13 @@ void loop() {
         theservo.write(k);
       }
       servo_position = k;
-    } else if(data == "RIGHT"){
+    } else if(command == "RIGHT"){
       prepareLights("RIGHT");
       for (int i = 4; i < NUM_LEDS; i++){
         leds[i] = CRGB(0, 255, 0);
       }
       //previousTime = millis();
-    } else if(data == "LEFT"){
+    } else if(command == "LEFT"){
       prepareLights("LEFT");
       for(int i = 0; i < NUM_LEDS / 2; i++) {
         leds[i] = CRGB(0, 255, 0);

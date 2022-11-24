@@ -9,10 +9,13 @@
 import time
 import speech_recognition as sr
 import serial
+import requests
+import sys
 
 ser = serial.Serial('/dev/ttyACM0', 9600, timeout=2)
 ser.reset_input_buffer()
 exit = False
+weatherURL = "https://api.openweathermap.org/data/2.5/weather?q=Helsinki&appid="
 
 WORD_LIST = []
 
@@ -30,6 +33,14 @@ def visiiri(text):
             return b"LEFT"
         elif word in ["right"]:
             return b"RIGHT"
+        elif word in ["weather", "whether", "wither"]:
+            r = requests.get(url=weatherURL + sys.argv[1])
+            data = r.json()
+            temp = round(data["main"]["temp"] - 273.15, 1)
+            print("Temperature?")
+            print(temp)
+            s = "WEATHER " + str(temp)
+            return bytes(s, "utf-8")
         else:
             return b"UNKNOWN"
 
@@ -48,6 +59,7 @@ def callback(recognizer, audio):
             # break
         if (translate.decode() != "UNKNOWN"):
             print("SENDING!")
+            print(translate)
             ser.write(translate)
 
     except Exception as e:
