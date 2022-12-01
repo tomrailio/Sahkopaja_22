@@ -39,9 +39,9 @@ const int blinkTime = 5000;
 CRGB leds[NUM_LEDS];
 
 // Servo configs
-int servo_position = 0;
-int serv_down = 0;
-int serv_up = 120;
+int servo_position = 70;
+int serv_down = 70;
+int serv_up = 0;
 Servo theservo;
 
 // OLED Screen configs
@@ -119,8 +119,13 @@ void setup() {
 
   // SERVO setup
   theservo.attach(9);
-  theservo.write(servo_position);
 
+  servo_position = 70;
+  serv_down = 70;
+  serv_up = 0;
+  
+  theservo.write(serv_down);
+  
 
 }
 
@@ -193,22 +198,18 @@ void loop() {
     String data = Serial.readStringUntil('\n');
     String command = data.substring(0, data.indexOf(" "));
     Serial.print("You sent me: ");
-    if(command == "OPEN"){  // OPEN THE VISOR
+    if(command == "CLOSE"){  // OPEN THE VISOR
       //digitalWrite(LED_BUILTIN, HIGH);
       //leds[0] = CRGB(255,0,0);
 
-      for (k = servo_position; k > serv_down; k--) {
-        theservo.write(k);
-      }
-      servo_position = k;
-    } else if(command == "CLOSE"){  // CLOSE THE VISOR
+      theservo.write(serv_down);
+      
+    } else if(command == "OPEN"){  // CLOSE THE VISOR
       //digitalWrite(LED_BUILTIN, LOW);
       //leds[0] = CRGB(0,0,0);
 
-      for (k = servo_position; k < serv_up; k++) {
-        theservo.write(k);
-      }
-      servo_position = k;
+      theservo.write(serv_up);
+      
     } else if(command == "RIGHT"){
       prepareLights("RIGHT");
       for (int i = 4; i < NUM_LEDS; i++){
