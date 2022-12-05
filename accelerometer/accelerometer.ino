@@ -262,9 +262,9 @@ void loop()
   unsigned long currentTime = millis();
    
   if (currentTime - previousTime >= eventInterval && mittaus)  {
-    x = analogRead(0); // read analog input pin 0
-    y = analogRead(1); // read analog input pin 1
-    z = analogRead(2); // read analog input pin 1
+    x = analogRead(0); // read analog input analogPin 0
+    y = analogRead(1); // read analog input analogPin 1
+    z = analogRead(2); // read analog input analogPin 2
     Serial.print("accelerations are x, y, z: ");
     Serial.print(x, DEC); // print acceleration in the X axis
     Serial.print(" "); // prints a space between the numbers
