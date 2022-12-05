@@ -22,6 +22,8 @@ WORD_LIST = []
 
 def visiiri(text):
     sliced = text.split(' ')
+    print("WHat did I say?")
+    print(text)
     for word in sliced:
         if word in ["open", "op", "pop", ""]:
             return b"OPEN"
@@ -47,6 +49,8 @@ def visiiri(text):
             print(t_str)
             s = "TIME " + t_str
             return bytes(s, "utf-8")
+        elif word in ["screen", "scream", "green", "Queen", "queen"]:
+            return b"SCREEN"
         else:
             return b"UNKNOWN"
 

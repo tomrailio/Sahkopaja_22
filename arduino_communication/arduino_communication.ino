@@ -25,11 +25,11 @@
 #include <Servo.h>
 
 // LED configs
-#define NUM_LEDS 6
+#define NUM_LEDS 17
 #define DATA_PIN 3
 #define LED_TYPE WS2811
 #define COLOR_ORDER GRB
-#define BRIGHTNESS 100
+#define BRIGHTNESS 50
 
 String state = "";
 unsigned long previousTime = millis();
@@ -39,10 +39,16 @@ const int blinkTime = 5000;
 CRGB leds[NUM_LEDS];
 
 // Servo configs
-int servo_position = 70;
-int serv_down = 70;
-int serv_up = 0;
+int servo_position = 0;
+int serv_down = 0;
+int serv_up = 120;
 Servo theservo;
+
+Servo screenServo;
+bool screenUp = true;
+int screenPos = 100;
+int screenUpPos = 100;
+int screenDownPos = 8;
 
 // OLED Screen configs
 #include <SPI.h>
@@ -94,7 +100,7 @@ void setup() {
   
   // SSD1306_SWITCHCAPVCC = generate display voltage from 3.3V internally
   if(!display.begin(SSD1306_SWITCHCAPVCC, SCREEN_ADDRESS)) {
-    Serial.println(F("SSD1306 allocation failed"));
+    //Serial.println(F("SSD1306 allocation failed"));
     for(;;); // Don't proceed, loop forever
   }
   display.clearDisplay();
@@ -108,7 +114,7 @@ void setup() {
   // initialize digital pin LED_BUILTIN as an output.
   pinMode(LED_BUILTIN, OUTPUT);
   //FastLED.addLeds<LED_TYPE, DATA_PIN, COLOR_ORDER>(leds, NUM_LEDS).setCorrection(TypicalLEDStrip);
-  //FastLED.setBrightness( BRIGHTNESS);
+  FastLED.setBrightness( BRIGHTNESS);
   FastLED.addLeds<TM1829, DATA_PIN, RGB>(leds, NUM_LEDS);
   for(int i = 0; i < NUM_LEDS; i++) {
     leds[i] = CRGB(0, 0, 0);
@@ -116,16 +122,14 @@ void setup() {
   FastLED.show();
   Serial.begin(9600);
   pinMode(LED_BUILTIN, OUTPUT);
+  //Serial.println("This is a setup!");
 
   // SERVO setup
   theservo.attach(9);
+  theservo.write(servo_position);
 
-  servo_position = 70;
-  serv_down = 70;
-  serv_up = 0;
-  
-  theservo.write(serv_down);
-  
+  screenServo.attach(10);
+  screenServo.write(screenPos);
 
 }
 
@@ -197,22 +201,26 @@ void loop() {
   if(Serial.available() > 0){
     String data = Serial.readStringUntil('\n');
     String command = data.substring(0, data.indexOf(" "));
-    Serial.print("You sent me: ");
-    if(command == "CLOSE"){  // OPEN THE VISOR
+    //Serial.print("You sent me: ");
+    if(command == "OPEN"){  // OPEN THE VISOR
       //digitalWrite(LED_BUILTIN, HIGH);
       //leds[0] = CRGB(255,0,0);
 
-      theservo.write(serv_down);
-      
-    } else if(command == "OPEN"){  // CLOSE THE VISOR
+      for (k = servo_position; k > serv_down; k--) {
+        theservo.write(k);
+      }
+      servo_position = k;
+    } else if(command == "CLOSE"){  // CLOSE THE VISOR
       //digitalWrite(LED_BUILTIN, LOW);
       //leds[0] = CRGB(0,0,0);
 
-      theservo.write(serv_up);
-      
+      for (k = servo_position; k < serv_up; k++) {
+        theservo.write(k);
+      }
+      servo_position = k;
     } else if(command == "RIGHT"){
       prepareLights("RIGHT");
-      for (int i = 4; i < NUM_LEDS; i++){
+      for (int i = NUM_LEDS / 2; i < NUM_LEDS; i++){
         leds[i] = CRGB(0, 255, 0);
       }
       //previousTime = millis();
@@ -224,13 +232,29 @@ void loop() {
     } else if (command == "WEATHER" || command == "TIME") {
       resetOLED();
       writeOLED(data);  // NOTE: input is DATA, and not COMMAND
-  }
+    } else if(command == "SCREEN") {
+      if(!screenUp){
+        //Serial.println("PUTTING SCR UP!");
+        for(; screenPos < screenUpPos; screenPos++){
+          screenServo.write(screenPos);
+          delay(15);
+        }
+      } else {
+        //This actually goes down
+        //Serial.println("PUTTING SCR DOWN!");
+        for(; screenPos > screenDownPos; screenPos--){
+          screenServo.write(screenPos);
+          delay(15);
+        }
+      }
+      screenUp = !screenUp;
+    }
   }
 
   if(millis() - blinkStart < blinkTime){  // WARNING: may cause LCD screen bugs?
     if (state == "RIGHT"){
       if(millis() - previousTime >= blinkInterval){
-        //Serial.println("BLINKING");
+        ////Serial.println("BLINKING");
         CRGB color;
         previousTime = millis();
         if(rightIsOn()){
