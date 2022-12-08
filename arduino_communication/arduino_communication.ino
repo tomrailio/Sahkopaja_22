@@ -87,7 +87,7 @@ unsigned long valiaika2 = 0;
 
 // Speaker configs  // AGREED TO USE A5 AS SPEAKER PIN
 #define NOTE 277
-#define melodyPin A5  // NOTE: CHANGED 3->A0 BECAUSE LED DATA PIN IS ALREADY PIN 3
+#define melodyPin A5  // NOTE: CHANGED 3->A5 BECAUSE LED DATA PIN IS ALREADY PIN 3
 
 unsigned int speakerState = 0;
 unsigned long sojournTime = 0;
@@ -241,6 +241,7 @@ void writeOLED(String s) {
 
 
 
+// Accelerometer & Speaker routines
 
 int checkStatus(int z, int y, int debug) {
   // JL: function to verify whether helmet has moved since an impulse
@@ -267,7 +268,6 @@ int checkStatus(int z, int y, int debug) {
   return response;
 }
 
-// Accelerometer & Speaker routines
 // JL: SOS signal
 void sos(int oldz, int oldy) {  // DEPRECATED BECAUSE OF BLOCKING
 
@@ -310,10 +310,6 @@ void buzz(int targetPin, long frequency, long length) {
 
 
 
-
-int k = 0;
-
-
 // JL: within loop() integrate accelerometer and speaker in a non-blocking way
 // JL: reasonable to use state controls for speaker:
 // JL: states should be
@@ -337,7 +333,7 @@ unsigned int updateSpeakerState(unsigned long state_time, unsigned long deltatim
   // If helmet is moving, no SOS is needed and speaker returns to state 0
   
   sojournTime = state_time + deltatime;
-  Serial.println(sojournTime);
+  //Serial.println(sojournTime);
   long loc_time = sojournTime;
 
   // reset waiting time to prevent overflows
@@ -414,6 +410,8 @@ void speakerTest() {
 }
 
 
+int k = 0;  // variable for servo control in loop
+
 void loop() {
 
   unsigned long currentTime = millis();
@@ -476,10 +474,13 @@ void loop() {
        
       mittaus3 = false;
       
-     previousTime = currentTime;
+     prevTimeAcc = currentTime;
     }}
 
   prevTimeAcc = currentTime;
+
+
+  // VOICE COMMANDS & SERVO/SCREEN CONTROL
   
   if(Serial.available() > 0){
     String data = Serial.readStringUntil('\n');
@@ -534,6 +535,9 @@ void loop() {
     }
   }
 
+
+  // LED CONTROLS
+  
   if(millis() - blinkStart < blinkTime){  // WARNING: may cause LCD screen bugs? //JL: I have forgotten why I wrote this warning
     if (state == "RIGHT"){
       if(millis() - previousTime >= blinkInterval){
@@ -577,6 +581,8 @@ void loop() {
   
 }
 
+// JL: Below is some code for assert() which I used in unit testing, for some reason standard assert() did not work
+// SOURCE: https://gist.github.com/jlesech/3089916
 
 // handle diagnostic informations given by assertion and abort program execution:
 void __assert(const char *__func, const char *__file, int __lineno, const char *__sexp) {
