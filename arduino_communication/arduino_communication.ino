@@ -85,9 +85,9 @@ bool mittaus3 = true;
 unsigned long valiaika2 = 0;
 
 
-// Speaker configs
+// Speaker configs  // AGREED TO USE A5 AS SPEAKER PIN
 #define NOTE 277
-#define melodyPin 5  // NOTE: CHANGED 3->5 BECAUSE LED DATA PIN IS ALREADY PIN 3
+#define melodyPin A5  // NOTE: CHANGED 3->A0 BECAUSE LED DATA PIN IS ALREADY PIN 3
 
 unsigned int speakerState = 0;
 unsigned long sojournTime = 0;
@@ -117,7 +117,23 @@ static const unsigned char PROGMEM fett [] = {
 
 
 // the setup function runs once when you press reset or power the board
+// IF DEBUGGING CHANGE TO 1
+int debug = 0;
+
 void setup() {
+  Serial.begin(9600);
+  
+  // accelerometer & speaker setup
+  pinMode(melodyPin, OUTPUT);//buzzer
+  //pinMode(13, OUTPUT);//led indicator when singing a note
+
+  // SPEAKER UNIT TEST
+  //Serial.println("testing");
+  //assert(true);
+  //speakerTest();  // UNCOMMENT THIS IF YOU WANT TO TEST SPEAKER CONTROL 
+
+  delay(100);
+  
   // LCD setup
   // SHOULD START WITH POWER OFF?
   // PROBLEM: MAKE CHANGES TO CIRCUIT SO A COMMAND CAN POWER ON THE LCD DISPLAY
@@ -145,7 +161,7 @@ void setup() {
     leds[i] = CRGB(0, 0, 0);
   }
   FastLED.show();
-  Serial.begin(9600);
+  
   pinMode(LED_BUILTIN, OUTPUT);
   //Serial.println("This is a setup!");
 
@@ -157,9 +173,7 @@ void setup() {
   screenServo.write(screenPos);
 
 
-  // accelerometer & speaker setup
-  pinMode(melodyPin, OUTPUT);//buzzer
-  //pinMode(13, OUTPUT);//led indicator when singing a note
+  
 
 }
 
@@ -228,13 +242,14 @@ void writeOLED(String s) {
 
 
 
-int checkStatus(int z, int y, int debug = 0) {
+int checkStatus(int z, int y, int debug) {
   // JL: function to verify whether helmet has moved since an impulse
   // returns 1 if helmet has moved by more than tolerance (int)
   // returns 0 otherwise
 
   if (debug == 1) {
-    return 0; // testing this
+    Serial.println("debug mode");
+    return 1; // testing this
   }
 
   int response = 1;
@@ -254,7 +269,7 @@ int checkStatus(int z, int y, int debug = 0) {
 
 // Accelerometer & Speaker routines
 // JL: SOS signal
-void sos(int oldz, int oldy) {  // NOT REASONABLE ANYMORE BECAUSE OF BLOCKING
+void sos(int oldz, int oldy) {  // DEPRECATED BECAUSE OF BLOCKING
 
   int helmStatus = 0;
   // NOTE_CS4 is the error sound
@@ -267,7 +282,7 @@ void sos(int oldz, int oldy) {  // NOT REASONABLE ANYMORE BECAUSE OF BLOCKING
     buzz(melodyPin, sig, 1000);
     delay(pause);
 
-    helmStatus = checkStatus(oldz, oldy, 1);
+    helmStatus = checkStatus(oldz, oldy, 0); // last 0 mean that this is non-debug mode
     
   }
   
@@ -298,7 +313,6 @@ void buzz(int targetPin, long frequency, long length) {
 
 int k = 0;
 
-// the loop function runs over and over again forever
 
 // JL: within loop() integrate accelerometer and speaker in a non-blocking way
 // JL: reasonable to use state controls for speaker:
@@ -323,9 +337,11 @@ unsigned int updateSpeakerState(unsigned long state_time, unsigned long deltatim
   // If helmet is moving, no SOS is needed and speaker returns to state 0
   
   sojournTime = state_time + deltatime;
+  Serial.println(sojournTime);
+  long loc_time = sojournTime;
 
   // reset waiting time to prevent overflows
-  if (sojournTime > 100000) {
+  if (loc_time > 100000) {
     sojournTime = 0;
   }
   
@@ -333,8 +349,8 @@ unsigned int updateSpeakerState(unsigned long state_time, unsigned long deltatim
     return 0;
   }
   else if (s == 1) {
-    
-    if (sojournTime > 500) {
+    //Serial.println("a");
+    if (loc_time > 500) {
       sojournTime = 0;
       return 2;
     }
@@ -343,10 +359,11 @@ unsigned int updateSpeakerState(unsigned long state_time, unsigned long deltatim
     }
   }
   else {
+    //Serial.println("b");
     buzz(melodyPin, NOTE, 1000);
     sojournTime = 0;
     // finally check whether to change status
-    int helmetstat = checkStatus(z2, y2);
+    int helmetstat = checkStatus(100, 100, debug);  // if debug returns 1 (helmet moved)
 
     if (helmetstat == 0) {
       return 1;
@@ -365,8 +382,12 @@ void speakerTest() {
 
   // verify that speaker stays in state 0
   speakerState = 0;
-  speakerState = updateSpeakerState(1, 1, speakerState);
+  int sojourntime = 0;
+  speakerState = updateSpeakerState(0, 0, speakerState);
   assert(speakerState == 0);
+
+  delay(50);
+  Serial.println("pass 1");
 
   // verify that waiting for buzz works
   int z2 = 100;
@@ -375,11 +396,21 @@ void speakerTest() {
   speakerState = updateSpeakerState(10, 1, speakerState);
   assert(speakerState == 1);
 
+  delay(50);
+  Serial.println("pass 2");
+
   speakerState = updateSpeakerState(499, 10, speakerState);
   assert(speakerState == 2);
 
-  speakerState = updateSpeakerState(0, 1, speakerState);
-  assert(speakerState == 1);
+  delay(50);
+  Serial.println("pass 3 OK");
+
+  speakerState = updateSpeakerState(0, 0, speakerState);
+  Serial.println(speakerState);
+  delay(500);
+  assert(speakerState == 0);
+
+  Serial.println("pass 4");
 }
 
 
@@ -433,13 +464,15 @@ void loop() {
      
      if ((z3 == z2 || y2 == y3) && currentTime - valiaika2 < 30000) { 
        //Serial.print("SOS");       // jos kypärä jäänyt paikoilleen niin kertoo raspille: soita avunhuuto
-
+      
        // JL: introduced sos sound 
        // must change to non-blocking
       // sos(z2, y2);
       // set the speaker to buzzing state instead of calling function
+      if (speakerState != 1) {
+        sojournTime = 0;  // reset counting time only if state changes to 1
+      }
       speakerState = 1;
-      sojournTime = 0;
        
       mittaus3 = false;
       
@@ -542,4 +575,17 @@ void loop() {
     //digitalWrite(LED_BUILTIN, LOW);
     // delay(500);
   
+}
+
+
+// handle diagnostic informations given by assertion and abort program execution:
+void __assert(const char *__func, const char *__file, int __lineno, const char *__sexp) {
+    // transmit diagnostic informations through serial link. 
+    Serial.println(__func);
+    Serial.println(__file);
+    Serial.println(__lineno, DEC);
+    Serial.println(__sexp);
+    Serial.flush();
+    // abort program execution.
+    abort();
 }
