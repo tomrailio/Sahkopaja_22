@@ -68,6 +68,23 @@ int screenDownPos = 8;
 #define SCREEN_ADDRESS 0x3C ///< See datasheet for Address; 0x3D for 128x64, 0x3C for 128x32
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 
+
+// Accelerometer configs
+int x, y, z, z2, y2, z3, y3 ; 
+const unsigned long eventInterval = 100;
+unsigned long previousTime = 0;
+unsigned long valiaika = 0;
+bool mittaus = true;
+bool mittaus2 = true;
+bool mittaus3 = true;
+unsigned long valiaika2 = 0;
+
+
+// Speaker configs
+#define NOTE 277
+#define melodyPin 5  // NOTE: CHANGED 3->5 BECAUSE LED DATA PIN IS ALREADY PIN 3
+
+
 // BOBA FETT
 
 static const unsigned char PROGMEM fett [] = {
@@ -130,6 +147,11 @@ void setup() {
 
   screenServo.attach(10);
   screenServo.write(screenPos);
+
+
+  // accelerometer & speaker setup
+  pinMode(melodyPin, OUTPUT);//buzzer
+  //pinMode(13, OUTPUT);//led indicator when singing a note
 
 }
 
@@ -194,10 +216,203 @@ void writeOLED(String s) {
 
 }
 
+// Accelerometer & Speaker routines
+// JL: SOS signal
+void sos(int oldz, int oldy) {  // NOT REASONABLE ANYMORE BECAUSE OF BLOCKING
+
+  int helmStatus = 0;
+  // NOTE_CS4 is the error sound
+  int sig = NOTE;
+  int pause = 500;
+  int slen = 1000;
+
+  while (helmStatus == 0) {
+
+    buzz(melodyPin, sig, 1000);
+    delay(pause);
+
+    helmStatus = checkStatus(oldz, oldy);
+    
+  }
+  
+}
+
+
+
+int checkStatus(int z, int y) {
+  // JL: function to verify whether helmet has moved since an impulse
+  // returns 1 if helmet has moved by more than tolerance (int)
+  // returns 0 otherwise
+
+  int response = 1;
+
+  int newz = analogRead(2);
+  int newy = analogRead(1);
+
+  int tolerance = 2;
+
+  // JL: if change in z, y is below tolerance, give zero response
+  if (abs(z - newz) <= tolerance || abs(y - newy) <= tolerance) {
+    response = 0;
+  }
+
+  return response;
+}
+
+
+// JL: buzz is the main function to output single sounds
+void buzz(int targetPin, long frequency, long length) {
+  //digitalWrite(13, HIGH);
+  long delayValue = 1000000 / frequency / 2; // calculate the delay value between transitions
+  //// 1 second's worth of microseconds, divided by the frequency, then split in half since
+  //// there are two phases to each cycle
+  long numCycles = frequency * length / 1000; // calculate the number of cycles for proper timing
+  //// multiply frequency, which is really cycles per second, by the number of seconds to
+  //// get the total number of cycles to produce
+  for (long i = 0; i < numCycles; i++) { // for the calculated length of time...
+    digitalWrite(targetPin, HIGH); // write the buzzer pin high to push out the diaphram
+    delayMicroseconds(delayValue); // wait for the calculated delay value
+    digitalWrite(targetPin, LOW); // write the buzzer pin low to pull back the diaphram
+    delayMicroseconds(delayValue); // wait again or the calculated delay value
+  }
+  //digitalWrite(13, LOW);
+
+}
+
+
+
+
 int k = 0;
 
 // the loop function runs over and over again forever
+
+// JL: within loop() integrate accelerometer and speaker in a non-blocking way
+// JL: reasonable to use state controls for speaker:
+// JL: states should be
+// - standby                  : 0
+// - waiting (buzz pending)   : 1
+// - playing buzz             : 2
+// JL: waiting must be according to set time
+// JL: standby is entirely passive
+// JL: playing buzz simply plays something
+// more documentation in function below
+
+unsigned int updateSpeakerState(unsigned long state_time, unsigned long deltatime, unsigned int s) {
+  // FUNCTION TO CONTROL THE SPEAKER FUNCTIONS
+  // Speaker states work as describes 0-2 above
+  // If speaker is in state 0, it remains in state 0 (standby)
+  // Outside accelerometer functions can activate state 1 (prepare for buzz)
+  // In state 1, a waiting time counts down until the next buzz
+  // When countdown is done, speaker moves to state 2 (emit buzz)
+  // In state 2 the speaker emits a buzz, then checks helmet position for movement.
+  // If helmet is stationary, return to state 1 (wait for next buzz)
+  // If helmet is moving, no SOS is needed and speaker returns to state 0
+  
+  sojournTime = state_time + deltatime;
+
+  // reset waiting time to prevent overflows
+  if (sojournTime > 100000) {
+    sojournTime = 0;
+  }
+  
+  if (s == 0) {
+    return 0;
+  }
+  else if (s == 1) {
+    
+    if (sojournTime > 500) {
+      sojournTime = 0;
+      return 2;
+    }
+    else {
+      return 1;
+    }
+  }
+  else {
+    buzz(melodyPin, NOTE, 1000);
+    sojournTime = 0;
+    // finally check whether to change status
+    int helmetstat = checkStatus(z2, y2);
+
+    if (helmetstat == 0) {
+      return 1;
+    }
+    else {
+      return 0;
+    }
+  }
+  
+}
+
+unsigned int speakerState = 0;
+unsigned long sojournTime = 0;
+
+
 void loop() {
+
+  unsigned long currentTime = millis();
+
+  // JL: speaker and accelerometer logic below
+  
+  speakerState = updateSpeakerState(sojournTime, currentTime - previousTime, speakerState)
+
+  if (currentTime - previousTime >= eventInterval && mittaus)  {
+    x = analogRead(0); // read analog input analogPin 0
+    y = analogRead(1); // read analog input analogPin 1
+    z = analogRead(2); // read analog input analogPin 2
+    Serial.print("accelerations are x, y, z: ");
+    Serial.print(x, DEC); // print acceleration in the X axis
+    Serial.print(" "); // prints a space between the numbers
+    Serial.print(y, DEC); // print acceleration in the Y axis
+    Serial.print(" "); // prints a space between the numbers
+    Serial.println(z, DEC); // print acceleration in the Z axis
+    previousTime = currentTime;     
+                            
+  }
+  
+  if ((z > 600 || y > 600) && mittaus)  {
+     unsigned long iskuaika = currentTime;
+     mittaus = false;
+     valiaika = currentTime;
+     Serial.print("isku havaittu");
+     mittaus3 = true;
+   }     
+        
+  if ((currentTime - valiaika >= 3000) && !mittaus && mittaus2  ) {
+     z2 = analogRead(2); 
+     y2 = analogRead(1);  // mittaa kiihtyvydeen uudestaan
+     Serial.println("1. mittaus iskun jlk");
+     mittaus2 = false;
+     
+  }        
+  if ((currentTime - valiaika >= 5000) && !mittaus && !mittaus2) {
+     z3 = analogRead(2);
+     y3 = analogRead(1);  // mittaa kiihtyvyyden taas
+     Serial.println("2. mittaus iskun jlk");
+     mittaus = true;
+     mittaus2 = true;
+     x = analogRead(0); // read analog input pin 0
+     y = analogRead(1); // read analog input pin 1
+     z = analogRead(2); // read analog input pin 1
+     valiaika2 = currentTime;
+     
+     if ((z3 == z2 || y2 == y3) && currentTime - valiaika2 < 30000) { 
+       //Serial.print("SOS");       // jos kypärä jäänyt paikoilleen niin kertoo raspille: soita avunhuuto
+
+       // JL: introduced sos sound 
+       // must change to non-blocking
+      // sos(z2, y2);
+      // set the speaker to buzzing state instead of calling function
+      speakerState = 1;
+      sojournTime = 0;
+       
+      mittaus3 = false;
+      
+     previousTime = currentTime;
+    }}
+
+  previousTime = currentTime;
+  
   if(Serial.available() > 0){
     String data = Serial.readStringUntil('\n');
     String command = data.substring(0, data.indexOf(" "));
