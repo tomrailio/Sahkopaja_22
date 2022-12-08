@@ -31,7 +31,7 @@
 
 // LED configs
 #define NUM_LEDS 17
-#define DATA_PIN 3
+#define DATA_PIN 11 // Data ping of the led lights! Maybe should be named better.
 #define LED_TYPE WS2811
 #define COLOR_ORDER GRB
 #define BRIGHTNESS 50
