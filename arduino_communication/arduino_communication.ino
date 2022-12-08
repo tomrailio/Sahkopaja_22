@@ -24,6 +24,11 @@
 #include <FastLED.h>
 #include <Servo.h>
 
+// UNIT TESTING
+#define __ASSERT_USE_STDERR
+
+#include <assert.h>
+
 // LED configs
 #define NUM_LEDS 17
 #define DATA_PIN 3
@@ -72,7 +77,7 @@ Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 // Accelerometer configs
 int x, y, z, z2, y2, z3, y3 ; 
 const unsigned long eventInterval = 100;
-unsigned long previousTime = 0;
+unsigned long prevTimeAcc = 0; // previously conflicted with LED code
 unsigned long valiaika = 0;
 bool mittaus = true;
 bool mittaus2 = true;
@@ -83,6 +88,9 @@ unsigned long valiaika2 = 0;
 // Speaker configs
 #define NOTE 277
 #define melodyPin 5  // NOTE: CHANGED 3->5 BECAUSE LED DATA PIN IS ALREADY PIN 3
+
+unsigned int speakerState = 0;
+unsigned long sojournTime = 0;
 
 
 // BOBA FETT
@@ -216,6 +224,34 @@ void writeOLED(String s) {
 
 }
 
+
+
+
+
+int checkStatus(int z, int y, int debug = 0) {
+  // JL: function to verify whether helmet has moved since an impulse
+  // returns 1 if helmet has moved by more than tolerance (int)
+  // returns 0 otherwise
+
+  if (debug == 1) {
+    return 0; // testing this
+  }
+
+  int response = 1;
+
+  int newz = analogRead(2);
+  int newy = analogRead(1);
+
+  int tolerance = 2;
+
+  // JL: if change in z, y is below tolerance, give zero response
+  if (abs(z - newz) <= tolerance || abs(y - newy) <= tolerance) {
+    response = 0;
+  }
+
+  return response;
+}
+
 // Accelerometer & Speaker routines
 // JL: SOS signal
 void sos(int oldz, int oldy) {  // NOT REASONABLE ANYMORE BECAUSE OF BLOCKING
@@ -231,32 +267,10 @@ void sos(int oldz, int oldy) {  // NOT REASONABLE ANYMORE BECAUSE OF BLOCKING
     buzz(melodyPin, sig, 1000);
     delay(pause);
 
-    helmStatus = checkStatus(oldz, oldy);
+    helmStatus = checkStatus(oldz, oldy, 1);
     
   }
   
-}
-
-
-
-int checkStatus(int z, int y) {
-  // JL: function to verify whether helmet has moved since an impulse
-  // returns 1 if helmet has moved by more than tolerance (int)
-  // returns 0 otherwise
-
-  int response = 1;
-
-  int newz = analogRead(2);
-  int newy = analogRead(1);
-
-  int tolerance = 2;
-
-  // JL: if change in z, y is below tolerance, give zero response
-  if (abs(z - newz) <= tolerance || abs(y - newy) <= tolerance) {
-    response = 0;
-  }
-
-  return response;
 }
 
 
@@ -344,8 +358,29 @@ unsigned int updateSpeakerState(unsigned long state_time, unsigned long deltatim
   
 }
 
-unsigned int speakerState = 0;
-unsigned long sojournTime = 0;
+
+
+// speaker unit test
+void speakerTest() {
+
+  // verify that speaker stays in state 0
+  speakerState = 0;
+  speakerState = updateSpeakerState(1, 1, speakerState);
+  assert(speakerState == 0);
+
+  // verify that waiting for buzz works
+  int z2 = 100;
+  int y2 = 100;
+  speakerState = 1;
+  speakerState = updateSpeakerState(10, 1, speakerState);
+  assert(speakerState == 1);
+
+  speakerState = updateSpeakerState(499, 10, speakerState);
+  assert(speakerState == 2);
+
+  speakerState = updateSpeakerState(0, 1, speakerState);
+  assert(speakerState == 1);
+}
 
 
 void loop() {
@@ -354,9 +389,9 @@ void loop() {
 
   // JL: speaker and accelerometer logic below
   
-  speakerState = updateSpeakerState(sojournTime, currentTime - previousTime, speakerState)
+  speakerState = updateSpeakerState(sojournTime, currentTime - prevTimeAcc, speakerState);
 
-  if (currentTime - previousTime >= eventInterval && mittaus)  {
+  if (currentTime - prevTimeAcc >= eventInterval && mittaus)  {
     x = analogRead(0); // read analog input analogPin 0
     y = analogRead(1); // read analog input analogPin 1
     z = analogRead(2); // read analog input analogPin 2
@@ -366,7 +401,7 @@ void loop() {
     Serial.print(y, DEC); // print acceleration in the Y axis
     Serial.print(" "); // prints a space between the numbers
     Serial.println(z, DEC); // print acceleration in the Z axis
-    previousTime = currentTime;     
+    prevTimeAcc = currentTime;     
                             
   }
   
@@ -411,7 +446,7 @@ void loop() {
      previousTime = currentTime;
     }}
 
-  previousTime = currentTime;
+  prevTimeAcc = currentTime;
   
   if(Serial.available() > 0){
     String data = Serial.readStringUntil('\n');
@@ -466,7 +501,7 @@ void loop() {
     }
   }
 
-  if(millis() - blinkStart < blinkTime){  // WARNING: may cause LCD screen bugs?
+  if(millis() - blinkStart < blinkTime){  // WARNING: may cause LCD screen bugs? //JL: I have forgotten why I wrote this warning
     if (state == "RIGHT"){
       if(millis() - previousTime >= blinkInterval){
         ////Serial.println("BLINKING");
