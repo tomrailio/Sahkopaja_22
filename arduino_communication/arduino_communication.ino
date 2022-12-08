@@ -44,7 +44,7 @@ const int blinkTime = 5000;
 CRGB leds[NUM_LEDS];
 
 // Servo configs
-int servo_position = 0;
+int visor_position = 0;
 int serv_down = 0;
 int serv_up = 120;
 Servo theservo;
@@ -167,13 +167,13 @@ void setup() {
 
   // SERVO setup
   theservo.attach(9);
-  theservo.write(servo_position);
+  theservo.write(visor_position);
 
   screenServo.attach(10);
   screenServo.write(screenPos);
 
 
-  
+  Serial.println("This is setup");
 
 }
 
@@ -181,7 +181,7 @@ void setup() {
 // LED LIGHT ROUTINES
 
 bool rightIsOn() {
-  return leds[4] == CRGB(0, 255, 0);
+  return leds[NUM_LEDS / 2] == CRGB(0, 255, 0);
 }
 
 bool leftIsOn() {
@@ -438,9 +438,9 @@ void loop() {
      unsigned long iskuaika = currentTime;
      mittaus = false;
      valiaika = currentTime;
-     Serial.print("isku havaittu");
+     Serial.println("isku havaittu");
      mittaus3 = true;
-   }     
+   }
         
   if ((currentTime - valiaika >= 3000) && !mittaus && mittaus2  ) {
      z2 = analogRead(2); 
@@ -477,7 +477,7 @@ void loop() {
      prevTimeAcc = currentTime;
     }}
 
-  prevTimeAcc = currentTime;
+  //prevTimeAcc = currentTime;
 
 
   // VOICE COMMANDS & SERVO/SCREEN CONTROL
@@ -490,18 +490,16 @@ void loop() {
       //digitalWrite(LED_BUILTIN, HIGH);
       //leds[0] = CRGB(255,0,0);
 
-      for (k = servo_position; k > serv_down; k--) {
+      for (k = visor_position; k > serv_down; k--) {
         theservo.write(k);
       }
-      servo_position = k;
+      visor_position = k;
     } else if(command == "CLOSE"){  // CLOSE THE VISOR
-      //digitalWrite(LED_BUILTIN, LOW);
-      //leds[0] = CRGB(0,0,0);
 
-      for (k = servo_position; k < serv_up; k++) {
+      for (k = visor_position; k < serv_up; k++) {
         theservo.write(k);
       }
-      servo_position = k;
+      visor_position = k;
     } else if(command == "RIGHT"){
       prepareLights("RIGHT");
       for (int i = NUM_LEDS / 2; i < NUM_LEDS; i++){
