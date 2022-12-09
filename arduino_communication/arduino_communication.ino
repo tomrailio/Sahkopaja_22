@@ -241,7 +241,7 @@ void writeOLED(String s) {
   display.println(data);
   display.display();
   
-  delay(t);
+  //delay(t);
 
 }
 
@@ -375,7 +375,7 @@ unsigned int updateSpeakerState(unsigned long state_time, unsigned long deltatim
       return 0;
     }
   }
-  
+  Serial.println("End of function");
 }
 
 
@@ -447,6 +447,8 @@ void loop() {
      valiaika = currentTime;
      Serial.println("isku havaittu");
      mittaus3 = true;
+     resetOLED();
+     writeOLED("Isku");
    }
         
   if ((currentTime - valiaika >= 3000) && !mittaus && mittaus2  ) {
@@ -469,6 +471,8 @@ void loop() {
      
      if ((z3 == z2 || y2 == y3) && currentTime - valiaika2 < 30000) { 
        Serial.print("SOS");       // jos kypärä jäänyt paikoilleen niin kertoo raspille: soita avunhuuto
+       resetOLED();
+       writeOLED("SOS");
       
        // JL: introduced sos sound 
        // must change to non-blocking
@@ -514,12 +518,16 @@ void loop() {
       delay(1000);
       theservo.detach();
     } else if(command == "RIGHT"){
+      resetOLED();
+      writeOLED("Right");
       prepareLights("RIGHT");
       for (int i = NUM_LEDS / 2; i < NUM_LEDS; i++){
         leds[i] = CRGB(0, 255, 0);
       }
       //previousTime = millis();
     } else if(command == "LEFT"){
+      resetOLED();
+      writeOLED("Left");
       prepareLights("LEFT");
       for(int i = 0; i < NUM_LEDS / 2; i++) {
         leds[i] = CRGB(0, 255, 0);
