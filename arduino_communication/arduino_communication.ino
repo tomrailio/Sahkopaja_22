@@ -31,7 +31,7 @@
 
 // LED configs
 #define NUM_LEDS 17
-#define DATA_PIN 11 // Data ping of the led lights! Maybe should be named better.
+#define DATA_PIN 8 // Data pin of the led lights! Maybe should be named better.
 #define LED_TYPE WS2811
 #define COLOR_ORDER GRB
 #define BRIGHTNESS 50
@@ -46,14 +46,14 @@ CRGB leds[NUM_LEDS];
 // Servo configs
 int visor_position = 0;
 int serv_down = 0;
-int serv_up = 120;
+int serv_up = 80;
 Servo theservo;
 
 Servo screenServo;
 bool screenUp = true;
-int screenPos = 100;
-int screenUpPos = 100;
-int screenDownPos = 8;
+int screenPos = 40;
+int screenUpPos = 40;
+int screenDownPos = -30;
 
 // OLED Screen configs
 #include <SPI.h>
@@ -87,7 +87,7 @@ unsigned long valiaika2 = 0;
 
 // Speaker configs  // AGREED TO USE A5 AS SPEAKER PIN
 #define NOTE 277
-#define melodyPin A5  // NOTE: CHANGED 3->A5 BECAUSE LED DATA PIN IS ALREADY PIN 3
+#define melodyPin 11  // NOTE: CHANGED 3->A5 BECAUSE LED DATA PIN IS ALREADY PIN 3
 
 unsigned int speakerState = 0;
 unsigned long sojournTime = 0;
@@ -130,9 +130,9 @@ void setup() {
   // SPEAKER UNIT TEST
   //Serial.println("testing");
   //assert(true);
-  //speakerTest();  // UNCOMMENT THIS IF YOU WANT TO TEST SPEAKER CONTROL 
+  speakerTest();  // UNCOMMENT THIS IF YOU WANT TO TEST SPEAKER CONTROL 
 
-  delay(100);
+  //delay(100);
   
   // LCD setup
   // SHOULD START WITH POWER OFF?
@@ -148,7 +148,7 @@ void setup() {
   display.drawBitmap(32,0,fett,64,32,1);  // not a good picture but works
   display.display();
   
-  delay(3000);
+  //delay(3000);
   
   // LED setup
   
@@ -171,6 +171,13 @@ void setup() {
 
   screenServo.attach(10);
   screenServo.write(screenPos);
+
+  delay(1000);
+
+  // Detach servos so they don't keep using electricity
+
+  theservo.detach();
+  screenServo.detach();
 
 
   Serial.println("This is setup");
@@ -424,12 +431,12 @@ void loop() {
     x = analogRead(0); // read analog input analogPin 0
     y = analogRead(1); // read analog input analogPin 1
     z = analogRead(2); // read analog input analogPin 2
-    Serial.print("accelerations are x, y, z: ");
-    Serial.print(x, DEC); // print acceleration in the X axis
-    Serial.print(" "); // prints a space between the numbers
-    Serial.print(y, DEC); // print acceleration in the Y axis
-    Serial.print(" "); // prints a space between the numbers
-    Serial.println(z, DEC); // print acceleration in the Z axis
+    //Serial.print("accelerations are x, y, z: ");
+    //Serial.print(x, DEC); // print acceleration in the X axis
+    //Serial.print(" "); // prints a space between the numbers
+    //Serial.print(y, DEC); // print acceleration in the Y axis
+    //Serial.print(" "); // prints a space between the numbers
+    //Serial.println(z, DEC); // print acceleration in the Z axis
     prevTimeAcc = currentTime;     
                             
   }
@@ -461,7 +468,7 @@ void loop() {
      valiaika2 = currentTime;
      
      if ((z3 == z2 || y2 == y3) && currentTime - valiaika2 < 30000) { 
-       //Serial.print("SOS");       // jos kypärä jäänyt paikoilleen niin kertoo raspille: soita avunhuuto
+       Serial.print("SOS");       // jos kypärä jäänyt paikoilleen niin kertoo raspille: soita avunhuuto
       
        // JL: introduced sos sound 
        // must change to non-blocking
@@ -490,16 +497,22 @@ void loop() {
       //digitalWrite(LED_BUILTIN, HIGH);
       //leds[0] = CRGB(255,0,0);
 
+      theservo.attach(9);
       for (k = visor_position; k > serv_down; k--) {
         theservo.write(k);
       }
       visor_position = k;
+      delay(1000);
+      theservo.detach();
     } else if(command == "CLOSE"){  // CLOSE THE VISOR
+      theservo.attach(9);
 
       for (k = visor_position; k < serv_up; k++) {
         theservo.write(k);
       }
       visor_position = k;
+      delay(1000);
+      theservo.detach();
     } else if(command == "RIGHT"){
       prepareLights("RIGHT");
       for (int i = NUM_LEDS / 2; i < NUM_LEDS; i++){
@@ -515,21 +528,27 @@ void loop() {
       resetOLED();
       writeOLED(data);  // NOTE: input is DATA, and not COMMAND
     } else if(command == "SCREEN") {
+      screenServo.attach(10);
       if(!screenUp){
-        //Serial.println("PUTTING SCR UP!");
+        Serial.println("PUTTING SCR UP!");
         for(; screenPos < screenUpPos; screenPos++){
           screenServo.write(screenPos);
           delay(15);
         }
       } else {
         //This actually goes down
-        //Serial.println("PUTTING SCR DOWN!");
+        Serial.println("PUTTING SCR DOWN!");
         for(; screenPos > screenDownPos; screenPos--){
           screenServo.write(screenPos);
           delay(15);
         }
+        int moi = screenServo.read();
+        Serial.println("Pos?");
+        Serial.println(moi);
       }
       screenUp = !screenUp;
+      delay(1000);
+      screenServo.detach();
     }
   }
 
