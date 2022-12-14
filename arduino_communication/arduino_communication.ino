@@ -469,7 +469,7 @@ void loop() {
      z = analogRead(2); // read analog input pin 1
      valiaika2 = currentTime;
      
-     if ((z3 == z2 || y2 == y3) && currentTime - valiaika2 < 30000) { 
+     if (( abs(z3 - z2) <= 10 || abs(y2 - y3) <= 10) && currentTime - valiaika2 < 30000) { 
        Serial.print("SOS");       // jos kypärä jäänyt paikoilleen niin kertoo raspille: soita avunhuuto
        resetOLED();
        writeOLED("SOS");
