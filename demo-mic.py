@@ -62,7 +62,7 @@ def visiiri(text):
     print("WHat did I say?")
     print(text)
     for word in sliced:
-        if word in ["open", "op", "pop", ""]:
+        if word in ["open", "op", "pop"]:
             return b"OPEN"
         elif word in ["close", "down"]:
             return b"CLOSE"

@@ -72,8 +72,8 @@ Servo theservo;
 
 Servo screenServo;
 bool screenUp = true;
-int screenPos = 40;
-int screenUpPos = 40;
+int screenPos = 60;
+int screenUpPos = 60;
 int screenDownPos = -30;
 
 // OLED Screen configs
@@ -455,14 +455,15 @@ void loop() {
     //Serial.print("accelerations are x, y, z: ");
     //Serial.print(x, DEC); // print acceleration in the X axis
     //Serial.print(" "); // prints a space between the numbers
-    //Serial.print(y, DEC); // print acceleration in the Y axis
-    //Serial.print(" "); // prints a space between the numbers
-    //Serial.println(z, DEC); // print acceleration in the Z axis
+    Serial.print(y, DEC); // print acceleration in the Y axis
+    Serial.print(" "); // prints a space between the numbers
+    Serial.println(z, DEC); // print acceleration in the Z axis
     prevTimeAcc = currentTime;     
                             
   }
-  
-  if ((z > 600 || y > 600) && mittaus)  {
+
+  // Normally these would be 600 and 600
+  if ((z > 340 || y > 300) && mittaus)  {
      unsigned long iskuaika = currentTime;
      mittaus = false;
      valiaika = currentTime;
