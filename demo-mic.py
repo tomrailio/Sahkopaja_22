@@ -1,10 +1,47 @@
 #!/usr/bin/env python3
 
-# NOTE: uses pocketsphinx but if google API works then it can be changed
-# pocketsphinx installation
-# also uses pyaudio
+"""
+# 1. DESCRIPTION
+Python script for speech recognition and sending voice commands to Arduino controller.
 
-# run this script by executing "python3 demo-mic.py"
+# 2. PYTHON PACKAGE DEPENDENCIES
+- Python 3.8
+- PyAudio 0.2.11
+- SpeechRecognition 3.8.1
+- pyserial 3.5
+- requests 2.22.0
+
+# 3. DESCRIPTION OF FUNCTIONALITY
+Once activated, script keeps running until it is shut down by the voice command "QUIT".
+The script listens to certain keywords and communicates them to an Arduino controller over serial.
+By default the speech recognition relies on Google software.
+
+The following are valid voice commands:
+- OPEN
+- CLOSE
+- LEFT
+- RIGHT
+- WEATHER
+- TIME
+- QUIT or EXIT
+
+Voice command "WEATHER", the script downloads temperature data from openweathermap.org, an open API which needs an API key.
+Voice command "TIME", the script uses Python functions to check current time (dep. on machine clock).
+In the above two cases, the script also sends a data string via serial.
+
+# 4. DESCRIPTION OF USAGE
+The script is run using the terminal command:
+$ python3 demo-mic.py <weather-api-key>
+where the <weather-api-key> is replaced with a valid API key from openweathermap.org
+
+After startup, the script runs until given the voice command "QUIT"/"EXIT", or until force closed from terminal/bash.
+
+# 5. COMMENTS
+Google speech recognition API can be replaced with a PocketSphinx-based solution if desired.
+PocketSphinx can be locally deployed, so this circumvents heavy network usage.
+On the other hand, the Open Weather API can not be accessed without an internet connection.
+
+"""
 
 import time
 import speech_recognition as sr
@@ -12,7 +49,7 @@ import serial
 import requests
 import sys
 
-ser = serial.Serial('/dev/ttyACM0', 9600, timeout=2)
+ser = serial.Serial('/dev/ttyACM0', 9600, timeout=2)  # LINUX SERIAL, IF RUNNING ON WINDOWS, VERIFY SERIAL PATH
 ser.reset_input_buffer()
 exit = False
 weatherURL = "https://api.openweathermap.org/data/2.5/weather?q=Helsinki&appid="

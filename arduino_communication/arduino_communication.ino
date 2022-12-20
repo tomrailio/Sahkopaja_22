@@ -1,25 +1,46 @@
 /*
-  Blink
-
-  Turns an LED on for one second, then off for one second, repeatedly.
-
-  Most Arduinos have an on-board LED you can control. On the UNO, MEGA and ZERO
-  it is attached to digital pin 13, on MKR1000 on pin 6. LED_BUILTIN is set to
-  the correct LED pin independent of which board is used.
-  If you want to know what pin the on-board LED is connected to on your Arduino
-  model, check the Technical Specs of your board at:
-  https://www.arduino.cc/en/Main/Products
-
-  modified 8 May 2014
-  by Scott Fitzgerald
-  modified 2 Sep 2016
-  by Arturo Guadalupi
-  modified 8 Sep 2016
-  by Colby Newman
-
-  This example code is in the public domain.
-
-  https://www.arduino.cc/en/Tutorial/BuiltInExamples/Blink
+  # MAIN ARDUINO CODE IN HELMET PROJECT
+  
+  ## 1. DESCRIPTION
+  This code is for an Arduino Uno microcontroller which controls the following project components:
+    - an Adafruit SSD1306 screen
+    - two servomotors (for helmet visor + monitor arm)
+    - a LED strip of 17 RGB LED lights
+    - a speaker
+    - accelerometer
+  
+  ## 2. SOFTWARE LIBRARIES
+  The following Arduino software libraries are used:
+    - FastLED: controlling LED strip
+    - Servo: Arduino library for control of servomotors
+    - SPI: used for I2C data use with Adafruit monitor
+    - Wire: further necessity for the Adafruit monitor
+    - Adafruit_SSD1306: library for the specific screen model we use
+    - Adafruit_GFX: help functions for graphics on Adafruit monitor
+    - assert: (optional) used for unit testing, only during development & debugging
+  
+  ## 3. COMMAND-BASED FUNCTIONALITY
+  Arduino reads commands from a separate machine and performs actions based on commands.
+  The Arduino code is compatible with the following actions:
+    - "OPEN": visor servo opens the helmet visor
+    - "CLOSE": visor servo closes the helmet visor
+    - "SCREEN": raises/lowers servo with the screen arm
+    - "LEFT": left LEDs blink
+    - "RIGHT": right LEDs blink
+    - "TIME" + data: Adafruit screen writes data on screen
+    - "WEATHER" + data: Adafruit screen writes data on screen (with centigrade sign)
+  
+  ## 4. AUTOMATIC FUNCTIONALITY
+  Some actions are automated by the Arduino. The following happens automatically every loop:
+    i) accelerometer monitors helmet movement
+    ii) if strong impulse detected, enter a waiting state
+    iii) if no (within a small tolerance) movement is detected within the waiting state, activate alarm sound with the speaker
+    iv) if movement is detected in the waiting state, return to normal monitoring state
+  
+  ## 5. COMMENTS
+  Further comments:
+    - For specifics of the circuit design, see hardware documentation
+    - The Adafruit monitor displays an image of Boba Fett as startup screen; image is stored in variable fett
 */
 #include <FastLED.h>
 #include <Servo.h>
